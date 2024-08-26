@@ -5,6 +5,7 @@ export default function Home() {
 	const [file, setFile] = useState<File | null>(null);
 	const [message, setMessage] = useState('');
 	const [dateTime, setDateTime] = useState('');
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const router = useRouter();
 	useEffect(() => {
 		const token = localStorage.getItem('token');
@@ -32,7 +33,7 @@ export default function Home() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-
+		setIsSubmitting(true);
 		if (!file || !message || !dateTime) {
 			alert('Please fill in all fields');
 			return;
@@ -60,17 +61,28 @@ export default function Home() {
 
 			if (response.ok) {
 				alert('Message sent successfully');
+				setDateTime('');
+				setMessage('');
+				setFile(null);
 			} else {
 				if (response.status === 400) {
 					alert('Please fill in all fields');
 					return;
 				} else if (response.status === 401) {
 					alert('Please login first');
+				} else if (response.body) {
+					const data = await response.json();
+					if (data.error === 'WPPConnect client not initialized') {
+						alert('Please login and connect to WhatsApp first');
+					}
 				} else alert('Failed to send message');
 			}
 		} catch (error) {
 			console.error('Error:', error);
 			alert('An error occurred while sending the message');
+			router.push('/login');
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -110,6 +122,7 @@ export default function Home() {
 				<button
 					type='submit'
 					className='bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-300'
+					disabled={isSubmitting}
 				>
 					إرسال
 				</button>
