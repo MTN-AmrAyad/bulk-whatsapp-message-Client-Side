@@ -66,7 +66,7 @@ export default function Login() {
 				absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10
 				'
 				>
-					<h1 className='text-2xl font-bold text-center'>Scan QR Code</h1>
+					<h1 className='text-2xl font-bold text-center'>امسح الكود لتسجيل الدخول</h1>
 					<img
 						src={qrCodeImage}
 						alt='QR Code'
@@ -79,7 +79,7 @@ export default function Login() {
 						}}
 						className='py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
 					>
-						Scanned Successfully ?
+						تم مسح الكود؟ اضغط هنا
 					</button>
 				</div>
 			)}
@@ -87,13 +87,14 @@ export default function Login() {
 				onSubmit={handleSubmit}
 				className='flex flex-col space-y-6 bg-white p-8 rounded-lg shadow-lg w-full max-w-md'
 			>
-				<h1 className='text-2xl font-bold text-center'>Login</h1>
+				<h1 className='text-2xl font-bold text-center'>تسجيل الدخول</h1>
 				<div>
 					<label
 						htmlFor='email'
 						className='block text-sm font-medium text-gray-700'
+						dir='rtl'
 					>
-						Email
+						البريد الإلكتروني
 					</label>
 					<input
 						type='email'
@@ -108,8 +109,9 @@ export default function Login() {
 					<label
 						htmlFor='password'
 						className='block text-sm font-medium text-gray-700'
+						dir='rtl'
 					>
-						Password
+						كلمة المرور
 					</label>
 					<input
 						type='password'
@@ -125,7 +127,7 @@ export default function Login() {
 					className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
 					disabled={isSubmitting}
 				>
-					{isSubmitting ? 'Logging in...' : 'Login'}
+					{isSubmitting ? 'جاري تسجيل الدخول...' : 'سجل الدخول'}
 				</button>
 			</form>
 		</main>
