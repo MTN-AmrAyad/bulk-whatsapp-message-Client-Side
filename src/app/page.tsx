@@ -51,7 +51,7 @@ export default function Home() {
 		formData.append('date', dateTime);
 
 		try {
-			const response = await fetch('http://localhost:3000/send-messages', {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/send-messages`, {
 				method: 'POST',
 				body: formData,
 				headers: {

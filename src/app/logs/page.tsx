@@ -34,13 +34,14 @@ export default function Logs() {
 		}[]
 	>([]);
 	const [skip, setSkip] = useState(0);
-	const [limit, setLimit] = useState(10);
+	const [limit, setLimit] = useState(50);
 	const [totalLogs, setTotalLogs] = useState(0);
-
+	const [isLoading, setIsLoading] = useState(false);
 	useEffect(() => {
 		const fetchLogs = async () => {
+			setIsLoading(true);
 			try {
-				const response = await fetch(`http://localhost:3000/logs?skip=${skip}&limit=${limit}`, {
+				const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs?skip=${skip}&limit=${limit}`, {
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem('token')}`,
 					},
@@ -55,6 +56,8 @@ export default function Logs() {
 			} catch (error) {
 				console.error('Error:', error);
 				alert('An error occurred while fetching logs');
+			} finally {
+				setIsLoading(false);
 			}
 		};
 		fetchLogs();
@@ -79,13 +82,53 @@ export default function Logs() {
 		XLSX.writeFile(workbook, 'logs.xlsx');
 	};
 
+	const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+		setLimit(parseInt(e.target.value));
+	};
+
 	return (
 		<main
 			className='flex min-h-screen flex-col items-center justify-start p-6 bg-gray-100 w-screen h-screen'
-			dir='ltr'
+			dir='rtl'
 		>
 			<div className='relative overflow-x-auto shadow-md sm:rounded-lg w-full'>
-				<table className='w-full text-sm text-left rtl:text-right text-gray-500'>
+				<div className='flex justify-between items-center mb-4 px-2'>
+					<div>
+						<label
+							htmlFor='limit'
+							className='mr-2'
+						>
+							Items per page:
+						</label>
+						<select
+							id='limit'
+							value={limit}
+							onChange={handleLimitChange}
+							className='px-3 py-2 border rounded'
+						>
+							<option value={50}>50</option>
+							<option value={100}>100</option>
+							<option value={200}>200</option>
+							<option value={500}>500</option>
+							<option value={1000}>1000</option>
+						</select>
+					</div>
+					<button
+						onClick={handleExportToExcel}
+						className='px-4 py-2 bg-green-500 text-white rounded'
+					>
+						Export to Excel
+					</button>
+				</div>
+				{isLoading && (
+					<div className='absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-80'>
+						<div className='animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900' />
+					</div>
+				)}
+				<table
+					dir='ltr'
+					className='w-full text-sm text-left rtl:text-right text-gray-500'
+				>
 					<thead className='text-xs text-gray-700 uppercase'>
 						<tr>
 							<th
@@ -127,53 +170,50 @@ export default function Logs() {
 						</tr>
 					</thead>
 					<tbody>
-						{logs?.map((log) => (
-							<tr
-								key={log.id}
-								className='border-b border-gray-200'
-							>
-								<th
-									scope='row'
-									className='px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50'
-								>
-									{log.id}
-								</th>
-								<td className='px-6 py-4'>{log.phoneNumber}</td>
-								<td className='px-6 py-4 bg-gray-50'> {log.message}</td>
-								<td className='px-6 py-4'>
-									{log.status === 'sent' ? (
-										<span className='text-green-500'>{log.status.toUpperCase()}</span>
-									) : (
-										<span className='text-red-500'>{log.status.toUpperCase()}</span>
-									)}
-								</td>
-								<td className='px-6 py-4 bg-gray-50'> {new Date(log.sentAt).toLocaleString()}</td>
-								<td className='px-6 py-4'>{log.error}</td>
-							</tr>
-						))}
+						{!isLoading
+							? logs?.map((log) => (
+									<tr
+										key={log.id}
+										className='border-b border-gray-200'
+									>
+										<th
+											scope='row'
+											className='px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50'
+										>
+											{log.id}
+										</th>
+										<td className='px-6 py-4'>{log.phoneNumber}</td>
+										<td className='px-6 py-4 bg-gray-50'> {log.message}</td>
+										<td className='px-6 py-4'>
+											{log.status === 'sent' ? (
+												<span className='text-green-500'>{log.status.toUpperCase()}</span>
+											) : (
+												<span className='text-red-500'>{log.status.toUpperCase()}</span>
+											)}
+										</td>
+										<td className='px-6 py-4 bg-gray-50'> {new Date(log.sentAt).toLocaleString()}</td>
+										<td className='px-6 py-4 text-red-500'>{log.error}</td>
+									</tr>
+							  ))
+							: null}
 					</tbody>
 				</table>
 			</div>
-			<div className='flex justify-evenly mt-4 w-full'>
-				<button
-					onClick={handlePreviousPage}
-					disabled={skip === 0}
-					className='px-4 py-2 bg-blue-500 text-white rounded'
-				>
-					Previous
-				</button>
-				<button
-					onClick={handleExportToExcel}
-					className='px-4 py-2 bg-green-500 text-white rounded'
-				>
-					Export to Excel
-				</button>
+
+			<div className='flex justify-between mt-4 w-full'>
 				<button
 					onClick={handleNextPage}
 					disabled={skip + limit >= totalLogs}
-					className='px-4 py-2 bg-blue-500 text-white rounded'
+					className='px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50'
 				>
 					Next
+				</button>
+				<button
+					onClick={handlePreviousPage}
+					disabled={skip === 0}
+					className='px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50'
+				>
+					Previous
 				</button>
 			</div>
 		</main>
