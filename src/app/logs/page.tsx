@@ -1,10 +1,16 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
 export default function Logs() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const [skip, setSkip] = useState<number>(parseInt(searchParams.get('skip') || '0'));
+	const [limit, setLimit] = useState<number>(parseInt(searchParams.get('limit') || '50'));
+
+	const [totalLogs, setTotalLogs] = useState(0);
+	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
 		const token = localStorage.getItem('token');
@@ -23,6 +29,13 @@ export default function Logs() {
 		}
 	}, [router]);
 
+	useEffect(() => {
+		const params = new URLSearchParams();
+		params.set('skip', skip.toString());
+		params.set('limit', limit.toString());
+		router.replace(`?${params.toString()}`);
+	}, [skip, limit, router]);
+
 	const [logs, setLogs] = useState<
 		{
 			id: number;
@@ -33,10 +46,7 @@ export default function Logs() {
 			error: string;
 		}[]
 	>([]);
-	const [skip, setSkip] = useState(0);
-	const [limit, setLimit] = useState(50);
-	const [totalLogs, setTotalLogs] = useState(0);
-	const [isLoading, setIsLoading] = useState(false);
+
 	useEffect(() => {
 		const fetchLogs = async () => {
 			setIsLoading(true);
@@ -106,13 +116,19 @@ export default function Logs() {
 							onChange={handleLimitChange}
 							className='px-3 py-2 border rounded'
 						>
-							<option value={50}>50</option>
 							<option value={100}>100</option>
 							<option value={200}>200</option>
 							<option value={500}>500</option>
 							<option value={1000}>1000</option>
+							<option value={2000}>2000</option>
 						</select>
 					</div>
+					<p>
+						Showing {skip + 1} - {skip + limit} of {totalLogs} logs
+						<span className='ml-4 text-sm text-gray-500'>
+							Failed logs: {logs.filter((log) => log.status === 'failed').length}
+						</span>
+					</p>
 					<button
 						onClick={handleExportToExcel}
 						className='px-4 py-2 bg-green-500 text-white rounded'
@@ -182,7 +198,7 @@ export default function Logs() {
 										>
 											{log.id}
 										</th>
-										<td className='px-6 py-4'>{log.phoneNumber}</td>
+										<td className='px-6 py-4'>+{log.phoneNumber.replace('@c.us', '')}</td>
 										<td className='px-6 py-4 bg-gray-50'> {log.message}</td>
 										<td className='px-6 py-4'>
 											{log.status === 'sent' ? (
