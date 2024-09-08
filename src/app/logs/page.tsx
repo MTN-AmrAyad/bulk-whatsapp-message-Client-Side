@@ -1,14 +1,28 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
 export default function Logs() {
+	return (
+		<Suspense
+			fallback={
+				<div className='absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-80'>
+					<div className='animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900' />
+				</div>
+			}
+		>
+			<LogsComponent />
+		</Suspense>
+	);
+}
+
+function LogsComponent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [skip, setSkip] = useState<number>(parseInt(searchParams.get('skip') || '0'));
 	const [limit, setLimit] = useState<number>(parseInt(searchParams.get('limit') || '50'));
-
+	const [minDate, setMinDate] = useState<string>('');
 	const [totalLogs, setTotalLogs] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -33,8 +47,11 @@ export default function Logs() {
 		const params = new URLSearchParams();
 		params.set('skip', skip.toString());
 		params.set('limit', limit.toString());
+		if (minDate) {
+			params.set('minDate', minDate);
+		}
 		router.replace(`?${params.toString()}`);
-	}, [skip, limit, router]);
+	}, [skip, limit, router, minDate]);
 
 	const [logs, setLogs] = useState<
 		{
@@ -51,13 +68,32 @@ export default function Logs() {
 		const fetchLogs = async () => {
 			setIsLoading(true);
 			try {
-				const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs?skip=${skip}&limit=${limit}`, {
+				const uri = new URL(`${process.env.NEXT_PUBLIC_API_URL}/logs`);
+				const params = new URLSearchParams();
+				params.set('skip', skip.toString());
+				params.set('limit', limit.toString());
+				params.set('minDate', minDate);
+				uri.search = params.toString();
+				const response = await fetch(uri.toString(), {
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem('token')}`,
 					},
 				});
 				if (response.ok) {
-					const { logs, total } = await response.json();
+					const {
+						logs,
+						total,
+					}: {
+						logs: {
+							id: number;
+							phoneNumber: string;
+							message: string;
+							sentAt: string;
+							status: string;
+							error: string;
+						}[];
+						total: number;
+					} = await response.json();
 					setLogs(logs);
 					setTotalLogs(total);
 				} else {
@@ -71,7 +107,7 @@ export default function Logs() {
 			}
 		};
 		fetchLogs();
-	}, [skip, limit]);
+	}, [skip, limit, minDate]);
 
 	const handlePreviousPage = () => {
 		if (skip >= limit) {
@@ -86,16 +122,17 @@ export default function Logs() {
 	};
 
 	const handleExportToExcel = () => {
-		const worksheet = XLSX.utils.json_to_sheet(logs);
+		const worksheet = XLSX.utils.json_to_sheet(
+			logs.map((log) => ({ ...log, phoneNumber: `+${log.phoneNumber.replace('@c.us', '')}` }))
+		);
 		const workbook = XLSX.utils.book_new();
 		XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
-		XLSX.writeFile(workbook, 'logs.xlsx');
+		XLSX.writeFile(workbook, `logs-${new Date().toISOString().split('T')[0]}.xlsx`);
 	};
 
 	const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		setLimit(parseInt(e.target.value));
 	};
-
 	return (
 		<main
 			className='flex min-h-screen flex-col items-center justify-start p-6 bg-gray-100 w-screen h-screen'
@@ -122,6 +159,21 @@ export default function Logs() {
 							<option value={1000}>1000</option>
 							<option value={2000}>2000</option>
 						</select>
+					</div>
+					<div className='flex items-center'>
+						<label
+							htmlFor='minDate'
+							className='mr-2'
+						>
+							Min Date:
+						</label>
+						<input
+							type='date'
+							id='minDate'
+							value={minDate}
+							onChange={(e) => setMinDate(e.target.value)}
+							className='px-3 py-2 border rounded'
+						/>
 					</div>
 					<p>
 						Showing {skip + 1} - {skip + limit} of {totalLogs} logs

@@ -41,10 +41,10 @@ export default function Home() {
 		// if the date is in the past or is right now then alert the user
 		const now = new Date();
 		const selectedDate = new Date(dateTime);
-		if (selectedDate.getTime() <= now.getTime() || selectedDate.getTime() - now.getTime() < 60000) {
-			alert('Please select a date and time at least 1 minute in the future');
-			return;
-		}
+		// if (selectedDate.getTime() <= now.getTime() || selectedDate.getTime() - now.getTime() < 60000) {
+		// 	alert('Please select a date and time at least 1 minute in the future');
+		// 	return;
+		// }
 		const formData = new FormData();
 		formData.append('file', file);
 		formData.append('message', message);
